@@ -47,7 +47,7 @@ module CompletePartialOrder where
 private
   variable
     ℓ ℓ′ : Level
-    A B : Set ℓ
+    A B C : Set ℓ
 
 module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
 
@@ -212,7 +212,9 @@ Triv-ω-CompletePartialOrder =
 
 private
   variable
-    PO PO′ : PartialOrder A
+    PO : PartialOrder A
+    PO′ : PartialOrder B
+    PO′′ : PartialOrder C
 
 module _ (ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO) where
 
@@ -235,7 +237,7 @@ module _ (ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO) where
     open  ω-CompletePartialOrder ωCPO′ renaming (⨆ to ⨆′)
 
     ωCont : MonoFun PO PO′ → Set _
-    ωCont (fun ↑ mono) = ∀ (s : IncSeq PO) → ⨆′ ((fun ∘ (seq s)) ↗ (mono ∘ (inc s))) ≡ fun (⨆ s)
+    ωCont (fun ↑ mono) = ∀ (s : IncSeq PO) → ⨆′ (fun ∘ (seq s) ↗ (mono ∘ (inc s))) ≡ fun (⨆ s)
 
     record ContFun : Set (ℓ ⊔ ℓ′) where
       constructor _↝_
@@ -248,6 +250,17 @@ module _ (ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO) where
         cont : ωCont monoFun
 
     infix 3 _↝_
+
+module _ {PO : PartialOrder {ℓ} {ℓ′} A} {PO′ : PartialOrder {ℓ}{ℓ′} B} {PO′′ : PartialOrder {ℓ}{ℓ′} C}
+          {ωCPO   : ω-CompletePartialOrder {ℓ}{ℓ′} PO}
+          {ωCPO′  : ω-CompletePartialOrder {ℓ}{ℓ′} PO′}
+          {ωCPO′′ : ω-CompletePartialOrder {ℓ}{ℓ′} PO′′} where
+
+    open ContFun
+
+    ωcont-∘ : ContFun ωCPO ωCPO′ → ContFun ωCPO′ ωCPO′′ → ContFun ωCPO ωCPO′′
+    ωcont-∘ (f ↑ f-mon ↝ f-cont) (g ↑ g-mon ↝ g-cont) = (g ∘ f ↑ mono-∘ {PO = PO}{PO′ = PO′}{PO′′ = PO′′} f f-mon g g-mon)
+               ↝ λ { (seq ↗ inc)  → trans (g-cont (f ∘ seq ↗ f-mon ∘ inc)) (cong g (f-cont (seq ↗ inc))) }
 
 module _ (DCPO : D-CompletePartialOrder {ℓ} {ℓ′} {A} PO) where
 
@@ -356,16 +369,15 @@ Cont→‖Cont‖ {PO = PO} {PO′ = PO′} {DCPO = DCPO} {DCPO′ = DCPO′} ac
     open ‖D-CompletePartialOrder‖ (DCPO→‖DCPO‖ PO′ acω DCPO′) using () renaming (⨆ to ‖⨆‖′; ⨆-ub to ‖⨆‖′-ub; ⨆-lub to ‖⨆‖′-lub)
     acω′ = ACω→ACω′ acω
 
+_^_ : (f : A → A) → ℕ → (A → A)
+f ^ zero = id
+f ^ suc n = λ x → f ((f ^ n) x)
 
-module LeastFixpoints (ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO) where
+module LeastFixpoints {ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO} where
 
   open ω-CompletePartialOrder ωCPO
   open IncSeq
   open ContFun
-
-  _^_ : (f : A → A) → ℕ → (A → A)
-  f ^ zero = id
-  f ^ suc n = λ x → f ((f ^ n) x)
 
   ^-inc : ∀ (F : MonoFun PO PO) (n : ℕ) → ((MonoFun.fun F) ^ n) ⊥ ⊑ ((MonoFun.fun F) ^ (suc n)) ⊥
   ^-inc (f ↑ f-mono-⊑) zero = ⊥⊑x
@@ -406,4 +418,28 @@ module LeastFixpoints (ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO) wh
   μ-lf : ∀ (F : ContFun ωCPO ωCPO) (x : A) → ((fun F) x ≡ x) → μ F ⊑ x
   μ-lf F x fx≡x = μ-lpf F x (subst (λ y → fun F x  ⊑ y) fx≡x ⊑-refl)
 
- 
+module _ {ωCPO : ω-CompletePartialOrder {ℓ} {ℓ′} {A} PO} {ωCPO′ : ω-CompletePartialOrder {ℓ} {ℓ′} {B} PO′} where
+
+  open ContFun
+  open LeastFixpoints
+  open ω-CompletePartialOrder
+  
+  -- uniformity principle
+  μ-uni : ∀ (F : ContFun ωCPO ωCPO) (G : ContFun ωCPO′ ωCPO′) (U : ContFun ωCPO ωCPO′) →
+          (fun U) ∘ (fun F) ≡ (fun G) ∘ (fun U) → (fun U) (⊥ ωCPO) ≡ ⊥ ωCPO′ →
+          (fun U) (μ F) ≡ μ G
+
+  μ-uni (f ↑ f-mono ↝ f-cont) (g ↑ g-mono ↝ g-cont) (u ↑ u-mono ↝ u-cont) UF≡GU U⊥≡⊥ =
+    trans (sym (u-cont ((λ n → (f ^ n) (⊥ ωCPO)) ↗ ^-inc {PO = PO} (f ↑ f-mono)))) (⨆-eq ωCPO′ (→-≡ h))
+      where
+        h : ∀ n → u ((f ^ n) (⊥ ωCPO)) ≡ (g ^ n) (⊥ ωCPO′)
+        h zero = U⊥≡⊥
+        h (suc n) = 
+          begin
+          u ((f ^ suc n) (⊥ ωCPO))
+            ≡⟨ cong (λ h → h ((f ^ n) (⊥ ωCPO))) UF≡GU ⟩
+          g (u ((f ^ n) (⊥ ωCPO)))
+            ≡⟨ cong g (h n) ⟩
+          (g ^ suc n) (⊥ ωCPO′)
+          ∎
+

@@ -33,6 +33,7 @@ module Def-L̃ (A : Set (ℓ ⊔ ℓ′)) where
 
   data L̃ : Set (ℓ ⊔ ℓ′)
   data _⊑_ : L̃ → L̃ → Set (ℓ ⊔ ℓ′)
+  
   PO-⊑ : PartialOrder L̃
   _▶_ : 𝕄 → DirSeq PO-⊑ → DirSeq PO-⊑
 
@@ -76,8 +77,9 @@ module Def-L̃ (A : Set (ℓ ⊔ ℓ′)) where
       ; ≤-prop = ⊑-prop
       }
 
-  a ▶ (seq ⇗ dir) = ((a ▷_) ∘ seq) ⇗ (λ n m →  proj₁ (dir n m) , ▷-monoʳ (proj₁ (proj₂ (dir n m)))
-                                                               , ▷-monoʳ (proj₂ (proj₂ (dir n m))))
+  a ▶ s = DirSeq-mono s (a ▷_ ↑ ▷-monoʳ)
+  -- a ▶ (seq ⇗ dir) = ((a ▷_) ∘ seq) ⇗ (λ n m →  proj₁ (dir n m) , ▷-monoʳ (proj₁ (proj₂ (dir n m)))
+  --                                                              , ▷-monoʳ (proj₂ (proj₂ (dir n m))))
 
 
   record Arguments {ℓ-L̃ ℓ-⊑ : Level} : Set (ℓ ⊔ ℓ′ ⊔ ℓ-suc (ℓ-L̃ ⊔ ℓ-⊑)) where

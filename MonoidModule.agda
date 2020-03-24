@@ -5,7 +5,7 @@ open import Function using (id; _∘_; _$_)
 open import Data.Nat using (ℕ)
 open import Data.Product using (Σ; proj₁; proj₂; _,_)
 
-open import CubicalIdentity using (_≡_; refl; sym; cong; trans; subst)
+open import CubicalIdentity using (_≡_; refl; sym; cong; trans; subst; subst2)
 
 open import PartialOrder
 open import CompletePartialOrder
@@ -108,18 +108,23 @@ private
     COMM COMM₁ COMM₂ COMM₃ COMM′ : Complete-OM-Module OM OMM
 
 -- Conservative complete M-module
-record C-Complete-OM-Module (COMM : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ} {ℓ-⊑} OM OMM) : Set (ℓ ⊔ ℓ-⊑) where
+record C-Complete-OM-Module (COMM : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ′} {ℓ′-⊑} OM OMM) : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ′ ⊔ ℓ′-⊑) where
   open O-Monoid OM renaming (PO to PO-≤)
   open Complete-OM-Module COMM public
 
   _▷-⊥ : DirSeq PO-≤ → DirSeq PO-⊑
-  _▷-⊥ = λ a → DirSeq-mono a ((_▷ ⊥) ↑ ▷⊥-mono)
+  --_▷-⊥ = λ a → DirSeq-mono a ((_▷ ⊥) ↑ ▷⊥-mono)
+  _▷-⊥ =  λ (seq ⇗ dir)  →
+             (_▷ ⊥) ∘ seq ⇗ λ n m →
+               (proj₁ $ dir n m) , (▷⊥-mono $ proj₁ $ proj₂ $ dir n m) , (▷⊥-mono $ proj₂ $ proj₂ $ dir n m)
+
 
   field
     ▷⊥-cont : ∀ {a : DirSeq PO-≤} (⋁a : Lub PO-≤ (DirSeq.seq a)) → ⨆ (a ▷-⊥) ≡ (Lub.ub ⋁a) ▷ ⊥
     
 
-record Complete-OM-Module-Morphism (COMM₁ : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ₁} {ℓ₁-⊑} OM OMM₁)
+record Complete-OM-Module-Morphism
+         (COMM₁ : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ₁} {ℓ₁-⊑} OM OMM₁)
          (COMM₂ : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ₂} {ℓ₂-⊑} OM OMM₂) : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ₁ ⊔ ℓ₁-⊑ ⊔ ℓ₂ ⊔ ℓ₂-⊑) where
   open O-Monoid OM
   open Complete-OM-Module COMM₁ using (𝔼; 𝔼-set) renaming (_⊑_ to _⊑₁_; ⊥ to ⊥₁; _▷_ to _▷₁_; ⨆ to ⨆₁; PO-⊑ to PO-⊑₁
@@ -143,8 +148,8 @@ record Complete-OM-Module-Morphism (COMM₁ : Complete-OM-Module {ℓ} {ℓ-⊑}
   field
     f-⨆ : ∀ {s : DirSeq PO-⊑₁} → fun (⨆₁ s) ≡ ⨆₂ (fun-∘ s)
 
-C-Complete-OM-Module-Morphism : (C-Complete-OM-Module {ℓ} {ℓ-⊑} {OM = OM} COMM₁) →
-                                (C-Complete-OM-Module {ℓ} {ℓ-⊑} {OM = OM} COMM₂) → Set (ℓ ⊔ ℓ-⊑)
+C-Complete-OM-Module-Morphism : (C-Complete-OM-Module {ℓ} {ℓ-⊑} {ℓ′ = ℓ₁} {ℓ′-⊑ = ℓ₁-⊑} {OM = OM} COMM₁) →
+                                (C-Complete-OM-Module {ℓ} {ℓ-⊑} {ℓ′ = ℓ₂} {ℓ′-⊑ = ℓ₂-⊑} {OM = OM} COMM₂) → Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ₁ ⊔ ℓ₁-⊑ ⊔ ℓ₂ ⊔ ℓ₂-⊑)
 C-Complete-OM-Module-Morphism {COMM₁ = COMM₁} {COMM₂ = COMM₂} CCOMM₁ CCOMM₂ =
   Complete-OM-Module-Morphism COMM₁ COMM₂
 
@@ -173,6 +178,20 @@ G COMMM-∘ F =
     open Complete-OM-Module-Morphism F renaming (fun to f)
     open Complete-OM-Module-Morphism G renaming (fun to g; f-⊑ to g-⊑; f-⊥ to g-⊥; f-▷ to g-▷; f-⨆ to g-⨆)
 
+{-
+module _ (COMM₁ : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ₁} {ℓ₁-⊑} OM OMM₁)
+         (COMM₂ : Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ₂} {ℓ₂-⊑} OM OMM₂) where
+
+  open Complete-OM-Module COMM₁ renaming (_⊑_ to _⊑₁_)
+  open Complete-OM-Module COMM₂ renaming (_⊑_ to _⊑₂_)
+  open Complete-OM-Module-Morphism
+  
+  COMMM-≡ : ∀ (f g : Complete-OM-Module-Morphism COMM₁ COMM₂) →
+    (e : fun f ≡ fun g) → f-⊑ f ≡ subst2 (λ u w → ∀ x y → x ⊑₁ y → u x ⊑₂ w y) e e (f-⊑ g) -- → f-⊥ f ≡ f-⊥ g → f-▷ f ≡ f-▷ g → f-⨆ f ≡ f-⨆ g → f ≡ g
+  COMMM-≡ f g f≡g = {!!}
+
+-}
+
 module _ {ℓ-A : Level} (A : Set ℓ-A) (OM : O-Monoid {ℓ} {ℓ-⊑} M) where
 
   record Complete-OM-Module-over (COMM : Complete-OM-Module {ℓ′ = ℓ′} {ℓ′-⊑} OM OMM) : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ′ ⊔ ℓ′-⊑ ⊔ ℓ-A) where
@@ -181,7 +200,7 @@ module _ {ℓ-A : Level} (A : Set ℓ-A) (OM : O-Monoid {ℓ} {ℓ-⊑} M) where
     field
       η : A → 𝔼
 
-  record C-Complete-OM-Module-over (CCOMM : C-Complete-OM-Module {ℓ} {ℓ-⊑} {OM = OM} COMM) : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ-A) where
+  record C-Complete-OM-Module-over (CCOMM : C-Complete-OM-Module {ℓ} {ℓ-⊑} {M} {ℓ′} {ℓ′-⊑} {OM} COMM) : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ′ ⊔ ℓ′-⊑ ⊔ ℓ-A) where
     open C-Complete-OM-Module CCOMM public
   
     field
@@ -246,22 +265,47 @@ module _ {ℓ-A : Level} {A : Set ℓ-A} {OM : O-Monoid {ℓ} {ℓ-⊑} M} where
     variable
       CCOMM CCOMM₁ CCOMM₂ CCOMM′ : C-Complete-OM-Module COMM
 
-  C-Complete-OM-Module-Morphism-over : (C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM CCOMM₁) →
-                                       (C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM CCOMM₂) → Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ-A)
+  C-Complete-OM-Module-Morphism-over : (C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM {ℓ₁} {ℓ₁-⊑} CCOMM₁) →
+                                       (C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM {ℓ₂} {ℓ₂-⊑} CCOMM₂) → Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ₁ ⊔ ℓ₁-⊑ ⊔ ℓ₂ ⊔ ℓ₂-⊑ ⊔ ℓ-A)
   C-Complete-OM-Module-Morphism-over CCOMMo₁ CCOMMo₂ =
     Complete-OM-Module-Morphism-over (COMMo CCOMMo₁) (COMMo CCOMMo₂)
       where
         open C-Complete-OM-Module-over
 
-  record Initial-C-Complete-OM-Module-over (CCOMMo : C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM CCOMM)
-                                           : Set (ℓ-suc (ℓ ⊔ ℓ-⊑) ⊔ ℓ-A) where
+  record Initial-C-Complete-OM-Module-over (ℓ-to ℓ-⊑-to : Level) (CCOMMo : C-Complete-OM-Module-over {ℓ} {ℓ-⊑} A OM {ℓ′} {ℓ′-⊑} CCOMM)
+                                           : Set (ℓ ⊔ ℓ-⊑ ⊔ ℓ′ ⊔ ℓ′-⊑ ⊔ (ℓ-suc (ℓ-to ⊔ ℓ-⊑-to)) ⊔ ℓ-A) where
     open C-Complete-OM-Module-over CCOMMo public
     open Complete-OM-Module-Morphism-over
       
     field
-      H : ∀ (CCOMMo′ : C-Complete-OM-Module-over A OM CCOMM′) → C-Complete-OM-Module-Morphism-over CCOMMo CCOMMo′
+      H : ∀ (CCOMMo′ : C-Complete-OM-Module-over A OM {ℓ-to} {ℓ-⊑-to} CCOMM′) → C-Complete-OM-Module-Morphism-over CCOMMo CCOMMo′
       uniq : ∀ {COMM′ : Complete-OM-Module {MM = MM′} OM OMM′}
                {CCOMM′ : C-Complete-OM-Module COMM′}
                {CCOMMo′ : C-Complete-OM-Module-over A OM CCOMM′}
                (G : C-Complete-OM-Module-Morphism-over CCOMMo CCOMMo′)
              → fun (H CCOMMo′) ≡ fun G
+
+module COMM-Category (OM : O-Monoid {ℓ} {ℓ} M) where
+
+  open O-Monoid OM
+
+  record COMM-Obj : Set (ℓ-suc ℓ) where
+    field
+      MM-Ob : M-Module {ℓ′ = ℓ} M
+      OMM-Ob : Ordered-M-Module {ℓ′-⊑ = ℓ} OM MM-Ob
+      COMM-Ob : Complete-OM-Module OM OMM-Ob
+
+  open COMM-Obj
+
+{-
+  COMM-Cat : Category COMM-Obj
+  COMM-Cat = record
+               { _➔_ = λ A B → Complete-OM-Module-Morphism (COMM-Ob A) (COMM-Ob B)
+               ; idm = COMMM-id
+               ; _⊚_ = _COMMM-∘_
+               ; ⊚-unitˡ = {!!}
+               ; ⊚-unitʳ = {!!}
+               ; ⊚-assoc = {!!}
+               }
+
+-}

@@ -9,8 +9,7 @@ open import Data.Nat using (ℕ; zero; suc)
                      renaming (_⊔_ to _⊔ᴺ_; _+_ to _+ᴺ_; _≤_ to _≤ᴺ_; z≤n to z≤ᴺn; s≤s to s≤ᴺs; ≤-pred to ≤ᴺ-pred)
 open import Data.Nat.Properties using (m≤m⊔n; n≤m⊔n; +-suc; +-identityʳ; _≤?_)
 
-
-open import CubicalIdentity using (_≡_; refl; sym; cong; trans; →-≡)
+open import CubicalIdentity using (_≡_; refl; sym; cong; cong2; trans; →-≡)
 open CubicalIdentity.≡-Reasoning
 
 open import Category
@@ -19,7 +18,7 @@ open import Monoid
 open import MonoidModule
 open import Kleisli
 open import ElgotIteration
-open import PartialOrder
+open import PartialOrder hiding (_[_])
 open import CompletePartialOrder
 
 import Eliminators-L-wave
@@ -198,11 +197,11 @@ module _ {X Y Z : Set (ℓ ⊔ ℓ′)} where
 L̃-Iteration : ElgotIteration Kl-CoC
 L̃-Iteration =
   record
-    { _†  = λ {X} {Y} → _† {Z = Y ⊎ X}
-    ; fix = λ {X} {Y} {f} → fix {Z = Y ⊎ X} f
+    { _†  = λ {X} {Y} → _†
+    ; fix = λ {X} {Y} {f} → fix f
     }
   where
-    module _ {X Y Z : Set (ℓ ⊔ ℓ′)} (f : X → L̃ (Y ⊎ X)) where
+    module _ {X Y : Set (ℓ ⊔ ℓ′)} (f : X → L̃ (Y ⊎ X)) where
       _⊑ʸ_ = _⊑_ Y
       DCPO-⊑ʸ = Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)
       ωCPO-⊑ʸ = DCPO→ωCPO (PO-⊑ Y) DCPO-⊑ʸ 
@@ -211,11 +210,6 @@ L̃-Iteration =
       DCPO-⊑ˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) X
       ωCPO-⊑ˣʸ = DCPO→ωCPO PO-⊑ˣʸ DCPO-⊑ˣʸ
       ⨆ˣʸ = ω-CompletePartialOrder.⨆ ωCPO-⊑ˣʸ
-
-      PO-⊑ʸᶻ = →-PO (PO-⊑ Z) Y
-      DCPO-⊑ʸᶻ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Z)) Y
-      ωCPO-⊑ʸᶻ = DCPO→ωCPO PO-⊑ʸᶻ DCPO-⊑ʸᶻ
-      ⨆ʸᶻ = ω-CompletePartialOrder.⨆ ωCPO-⊑ʸᶻ
     
       PO-⊑ʸˣʸ = →-PO (PO-⊑ Y) (Y ⊎ X)
       DCPO-⊑ʸˣʸ = →-DCPO DCPO-⊑ʸ (Y ⊎ X)
@@ -223,47 +217,187 @@ L̃-Iteration =
       ⨆ʸˣʸ = ω-CompletePartialOrder.⨆ ωCPO-⊑ʸˣʸ
       
       open ω-CompletePartialOrder using (⨆-const)
-      open LeastFixpoints ωCPO-⊑ˣʸ
+      open LeastFixpoints --{ωCPO = CPO-⊑ˣʸ}
       
       F : ContFun (ωCPO-⊑ˣʸ) (ωCPO-⊑ˣʸ)
-      F = (λ g → [ η , g ] ⋄ f)
-          ↑ (λ {g₁} {g₂} g₁x⊑g₂x → *-monoˡ f ([η,]-mono {Z = Z} g₁x⊑g₂x)) 
-          ↝ λ { s@(seq ↗ inc) → 
-                 begin
-                   ⨆ˣʸ ((λ n → ([ η , seq n ] ⋄ f)) ↗ ((*-monoˡ f) ∘ [η,]-mono ∘ inc))
-                 ≡⟨ *-ωcontˡ f ((λ n → [ η , seq n ]) ↗ [η,]-mono ∘ inc) ⟩                
-                   ⨆ʸˣʸ ((λ n → [ η , seq n ]) ↗ ([η,]-mono ∘ inc)) ⋄ f
-                 ≡⟨ cong (_⋄ f) ([η,]-cont s) ⟩
-                   [ η , ⨆ˣʸ s ] ⋄ f 
-                 ∎ } 
+      F = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ} (([ η ,_] ↑ [η,]-mono {Z = Y ⊎ X}) ↝ [η,]-cont) (((_⋄ f) ↑ (*-monoˡ f)) ↝ (*-ωcontˡ f))
+
       _†  = μ F
       fix = μ-fix F
 
-{-
---open TotalUniConway
---open Co-Cartesian.Co-Cartesian Kl-CoC renaming (_⊚_ to _⋄_) hiding ([_,_])
+open Co-Cartesian.Co-Cartesian Kl-CoC using ([]-inl; []-inr; []-destruct)
+  renaming (⊚-assoc to ⋄-assoc; ⊚-unitˡ to ⋄-unitˡ; ⊚-unitʳ to ⋄-unitʳ; ⊚-distrib-[] to ⋄-distrib-[])
 open ElgotIteration.ElgotIteration L̃-Iteration
+open LeastFixpoints
 
+†-naturality : {X Y Z : Set (ℓ ⊔ ℓ′)} {f : X → L̃ (Y ⊎ X)} {g : Y → L̃ Z} → ([ (η ∘ inj₁) ⋄ g , η ∘ inj₂ ] ⋄ f) † ≡ g ⋄ f †
+†-naturality {X}{Y}{Z}{f}{g} = sym $ μ-uni F G U (→-≡ UF≡GU) refl
+    where
+        ωCPO-⊑ʸ = DCPO→ωCPO (PO-⊑ Y) (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y))
 
+        PO-⊑ˣʸ = →-PO (PO-⊑ Y) X
+        DCPO-⊑ˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) X
+        ωCPO-⊑ˣʸ = DCPO→ωCPO PO-⊑ˣʸ DCPO-⊑ˣʸ
+
+        PO-⊑ˣᶻ = →-PO (PO-⊑ Z) X
+        DCPO-⊑ˣᶻ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Z)) X
+        ωCPO-⊑ˣᶻ = DCPO→ωCPO PO-⊑ˣᶻ DCPO-⊑ˣᶻ
+
+        PO-⊑ʸˣʸ = →-PO (PO-⊑ Y) (Y ⊎ X)
+        DCPO-⊑ʸˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) (Y ⊎ X)
+        ωCPO-⊑ʸˣʸ = DCPO→ωCPO PO-⊑ʸˣʸ DCPO-⊑ʸˣʸ
+
+        PO-⊑ᶻˣᶻ = →-PO (PO-⊑ Z) (Z ⊎ X)
+        DCPO-⊑ᶻˣᶻ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Z)) (Z ⊎ X)
+        ωCPO-⊑ᶻˣᶻ = DCPO→ωCPO PO-⊑ᶻˣᶻ DCPO-⊑ᶻˣᶻ
+    
+        h = [ (η ∘ inj₁) ⋄ g , η ∘ inj₂ ] ⋄ f
+        F = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ} ([ η ,_] ↑ [η,]-mono ↝ [η,]-cont) (_⋄ f ↑ *-monoˡ f ↝ *-ωcontˡ f) 
+        G = ωcont-∘ {ωCPO = ωCPO-⊑ˣᶻ}{ωCPO′ = ωCPO-⊑ᶻˣᶻ} ([ η ,_] ↑ [η,]-mono ↝ [η,]-cont) (_⋄ h ↑ *-monoˡ h ↝ *-ωcontˡ h)
+        U = g ⋄_ ↑ *-monoʳ g ↝ *-ωcontʳ g
+
+        UF≡GU : ∀ (u : X → L̃ Y) → g ⋄ ([ η , u ] ⋄ f) ≡ [ η , g ⋄ u ] ⋄ h
+        UF≡GU u =
+          begin
+          g ⋄ ([ η , u ] ⋄ f ) 
+               ≡⟨ ⋄-assoc {B = Y ⊎ X}{C = Y}{f = f} ⟩
+          (g ⋄ [ η , u ]) ⋄ f
+               ≡⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+          [ g ⋄ η , g ⋄ u ] ⋄ f
+               ≡⟨ cong (_⋄ f) (cong2 [_,_] (trans ⋄-unitʳ (sym ⋄-unitˡ)) refl) ⟩                      
+          [ η ⋄ g , g ⋄ u ] ⋄ f 
+               ≡˘⟨ cong (_⋄ f) (cong2 [_,_] (trans (⋄-assoc {f = g}) (cong (_⋄ g) ([]-inl {g = g ⋄ u }))) ([]-inr {f = η})) ⟩
+          [ [ η , g ⋄ u ] ⋄ ((η ∘ inj₁) ⋄ g) , [ η , g ⋄ u ] ⋄ (η ∘ inj₂)] ⋄ f
+               ≡˘⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+          ([ η , g ⋄ u ] ⋄ [(η ∘ inj₁) ⋄ g , η ∘ inj₂ ]) ⋄ f
+               ≡˘⟨ ⋄-assoc {f = f} ⟩
+          [ η , g ⋄ u ] ⋄ ([(η ∘ inj₁) ⋄ g , η ∘ inj₂ ] ⋄ f)
+          ∎
+
+†-uniformity : {X Y Z : Set (ℓ ⊔ ℓ′)} {f : X → L̃ (Y ⊎ X)} {g : Z → L̃ (Y ⊎ Z)} {h : Z → X}
+      → f ∘ h ≡ [ η ∘ inj₁ , (η ∘ inj₂) ∘ h ] ⋄ g  → f † ∘ h ≡ g †
+†-uniformity {X}{Y}{Z}{f}{g}{h} fh≡[id+h]g = μ-uni F G U (→-≡ UF≡GU) refl
+    where
+      ωCPO-⊑ʸ = DCPO→ωCPO (PO-⊑ Y) (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y))
+
+      PO-⊑ˣʸ = →-PO (PO-⊑ Y) X
+      DCPO-⊑ˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) X
+      ωCPO-⊑ˣʸ = DCPO→ωCPO PO-⊑ˣʸ DCPO-⊑ˣʸ
+
+      PO-⊑ᶻʸ = →-PO (PO-⊑ Y) Z
+      DCPO-⊑ᶻʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) Z
+      ωCPO-⊑ᶻʸ = DCPO→ωCPO PO-⊑ᶻʸ DCPO-⊑ᶻʸ
+
+      PO-⊑ʸˣʸ = →-PO (PO-⊑ Y) (Y ⊎ X)
+      DCPO-⊑ʸˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) (Y ⊎ X)
+      ωCPO-⊑ʸˣʸ = DCPO→ωCPO PO-⊑ʸˣʸ DCPO-⊑ʸˣʸ
+      
+      PO-⊑ʸᶻʸ = →-PO (PO-⊑ Y) (Y ⊎ Z)
+      DCPO-⊑ʸᶻʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) (Y ⊎ Z)
+      ωCPO-⊑ʸᶻʸ = DCPO→ωCPO PO-⊑ʸᶻʸ DCPO-⊑ʸᶻʸ
+        
+      F = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ} ([ η ,_] ↑ [η,]-mono {Z = Y ⊎ X} ↝ [η,]-cont) (_⋄ f ↑ *-monoˡ f ↝ *-ωcontˡ f) 
+      G = ωcont-∘ {ωCPO = ωCPO-⊑ᶻʸ}{ωCPO′ = ωCPO-⊑ʸᶻʸ} ([ η ,_] ↑ [η,]-mono {Z = Y ⊎ Z} ↝ [η,]-cont) (_⋄ g ↑ *-monoˡ g ↝ *-ωcontˡ g) 
+      U = _⋄ (η ∘ h) ↑ *-monoˡ (η ∘ h) ↝ *-ωcontˡ (η ∘ h)
+
+      UF≡GU : ∀ (u : X → L̃ Y) → [ η , u ] ⋄ (f ∘ h) ≡ [ η , u ∘ h ] ⋄ g
+      UF≡GU u =
+        begin
+        [ η , u ] ⋄ (f ∘ h)
+             ≡⟨ cong ([ η , u ] ⋄_) fh≡[id+h]g ⟩
+        [ η , u ] ⋄ (([ η ∘ inj₁ , (η ∘ inj₂) ∘ h ]) ⋄ g)
+             ≡⟨ ⋄-assoc {f = g} ⟩
+        ([ η , u ] ⋄ [ η ∘ inj₁ , (η ∘ inj₂) ∘ h ]) ⋄ g
+             ≡⟨ cong (_⋄ g) ⋄-distrib-[] ⟩
+        [ [ η , u ] ⋄ (η ∘ inj₁) , [ η , u ] ⋄ ((η ∘ inj₂) ∘ h) ] ⋄ g
+             ≡⟨ cong (_⋄ g) (cong2 [_,_] ([]-inl {g = u}) ([]-inr {f = η})) ⟩
+        [ η , u ∘ h ] ⋄ g
+        ∎    
+
+†-codiagonal : {X Y : Set (ℓ ⊔ ℓ′)} {f : X → L̃ ((Y ⊎ X) ⊎ X)} → ([ η , η ∘ inj₂ ] ⋄ f) † ≡ f † †
+†-codiagonal {X}{Y}{f} =
+  PartialOrder.≤-antisym PO-⊑ˣʸ
+    (μ-lf F (f † †) ltr) (μ-lpf G (([ η , η ∘ inj₂ ] ⋄ f) †)
+      (PartialOrder.≤-trans PO-⊑ˣʸ
+        (PartialOrder.≡-to-≤ PO-⊑ˣʸ (sym (†-naturality {f = f} {g = [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ]})))
+         (μ-lf H (([ η , η ∘ inj₂ ] ⋄ f) †) rtl)))
+
+    where
+      ωCPO-⊑ʸ = DCPO→ωCPO (PO-⊑ Y) (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y))
+
+      PO-⊑ˣʸ = →-PO (PO-⊑ Y) X
+      DCPO-⊑ˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) X
+      ωCPO-⊑ˣʸ = DCPO→ωCPO PO-⊑ˣʸ DCPO-⊑ˣʸ
+
+      PO-⊑ʸˣʸ = →-PO (PO-⊑ Y) (Y ⊎ X)
+      DCPO-⊑ʸˣʸ = →-DCPO (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y)) (Y ⊎ X)
+      ωCPO-⊑ʸˣʸ = DCPO→ωCPO PO-⊑ʸˣʸ DCPO-⊑ʸˣʸ
+      
+      F = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ}
+          ([ η ,_] ↑ [η,]-mono {Z = Y ⊎ X} ↝ [η,]-cont)
+          (_⋄  ([ η , η ∘ inj₂ ] ⋄ f) ↑ *-monoˡ ([ η , η ∘ inj₂ ] ⋄ f ) ↝ *-ωcontˡ ([ η , η ∘ inj₂ ] ⋄ f))
+
+      G = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ}
+          ([ η ,_] ↑ [η,]-mono {Z = Y ⊎ X} ↝ [η,]-cont)
+          (_⋄  (f †) ↑ *-monoˡ (f †) ↝ *-ωcontˡ (f †))
+
+      H = ωcont-∘ {ωCPO = ωCPO-⊑ˣʸ}{ωCPO′ = ωCPO-⊑ʸˣʸ}
+          ([ η ,_] ↑ [η,]-mono {Z = Y ⊎ X} ↝ [η,]-cont)
+          (_⋄ ([ (η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ] ⋄ f)
+            ↑  *-monoˡ ([ (η ∘ inj₁)  ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ] ⋄ f)
+            ↝ *-ωcontˡ ([ (η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ] ⋄ f))
+
+      ltr : [ η , f † † ] ⋄ ([ η , η ∘ inj₂ ] ⋄ f) ≡ f † †
+      ltr =
+        begin
+        [ η , f † † ] ⋄ ([ η , η ∘ inj₂ ] ⋄ f)
+             ≡⟨ ⋄-assoc {f = f} ⟩
+        ([ η , f † † ] ⋄ [ η , η ∘ inj₂ ]) ⋄ f
+             ≡⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+        [ [ η , f † † ] ⋄ η , [ η , f † † ] ⋄ η ∘ inj₂ ] ⋄ f
+             ≡⟨ cong (_⋄ f) ([]-destruct refl ([]-inr {f = η})) ⟩
+        [ [ η , f † † ] ⋄ η , f † † ] ⋄ f
+             ≡˘⟨ cong (_⋄ f) ([]-destruct refl (fix {f = f †})) ⟩
+        [ [ η , f † † ] ⋄ η , [ η , f † † ] ⋄ f † ] ⋄ f
+             ≡˘⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+        ([ η , f † † ] ⋄ [ η , f † ]) ⋄ f
+             ≡˘⟨ ⋄-assoc {f = f} ⟩
+        [ η , f † † ] ⋄ ([ η , f † ] ⋄ f)
+             ≡⟨ cong (_⋄_ [ η , f † † ]) (fix {f = f}) ⟩
+        [ η , f † † ] ⋄ f †
+             ≡⟨ fix {f = f †} ⟩
+        f † †
+        ∎
+        
+      rtl : [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ ([ (η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ] ⋄ f) ≡ ([ η , η ∘ inj₂ ] ⋄ f) †
+      rtl =
+        begin
+        [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ ([ (η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ] ⋄ f)
+             ≡⟨ ⋄-assoc {f = f} ⟩
+        ([ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ [ (η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , η ∘ inj₂ ]) ⋄ f
+             ≡⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+        [ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ ((η ∘ inj₁) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ]) , [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ (η ∘ inj₂) ] ⋄ f
+             ≡⟨ cong (_⋄ f) $ []-destruct (⋄-assoc {f = [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ]}) ([]-inr {f = η}) ⟩
+        [ ([ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ (η ∘ inj₁)) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ,  ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ f               
+             ≡⟨ cong (λ w → [ w ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ,  ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ f) ([]-inl {g = ([ η , η ∘ inj₂ ] ⋄ f) † }) ⟩
+        [ ([ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ (η ∘ inj₁)) ⋄ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ,  ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ f               
+             ≡⟨ cong (λ w → [ w ,  ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ f) ⋄-unitˡ ⟩
+        [ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ f               
+             ≡˘⟨ cong (_⋄ f) ([]-destruct ⋄-unitʳ ([]-inr {f = η})) ⟩
+        [ [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ η , [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ η ∘ inj₂ ] ⋄ f
+             ≡˘⟨ cong (_⋄ f) ⋄-distrib-[] ⟩
+        ([ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ [ η , η ∘ inj₂ ]) ⋄ f
+             ≡˘⟨ ⋄-assoc {f = f} ⟩
+        [ η , ([ η , η ∘ inj₂ ] ⋄ f) † ] ⋄ ([ η , η ∘ inj₂ ] ⋄ f)
+             ≡⟨ fix {f = [ η , η ∘ inj₂ ] ⋄ f } ⟩
+        ([ η , η ∘ inj₂ ] ⋄ f) †
+        ∎                    
+
+-- L̃ is an Elgot monad
 L̃-UniConway : TotalUniConway Kl-CoC L̃-Iteration CoC-C→Kl
 L̃-UniConway =
    record
-     { nat = λ {X} {Y} {Z} {f} {g} →
-           let
-             ωCPO-⊑ʸ = DCPO→ωCPO (PO-⊑ Y) (Complete-OM-Module.DCPO-⊑ (L̃-COMM Y))
-             ωCPO-⊑ʸˣ = →-ωCPO ωCPO-⊑ʸ X in
-             begin
-             ([((η ∘ inj₁) ⋄ g) , ((η ∘ inj₂) ⋄ η) ] ⋄ f) † 
-               ≡⟨ {!!} ⟩
-             {!!}
-               ≡⟨ *-ωcontʳ g {!!} ⟩
-             g ⋄ (f †) 
-             ∎
-            
-             --  trans {! (trans (*-ωcontˡ ([ (η ∘ inj₁) ⋄ g , (η ∘ inj₂) ⋄ η ] ⋄ f) ) (cong (λ k → k ⋄  ([ (η ∘ inj₁) ⋄ g , (η ∘ inj₂) ⋄ η ] ⋄ f) ) [η,]-cont))!} {!!}
-       -- trans (*-ωcontʳ g) (cong (g ⋄_) (ω-CompletePartialOrder.⨆-eq ωCPO-⊑ʸˣ (→-≡ (λ n →  →-≡ (λ x → {!!}))) ) )
-     ; cod = {!!}
-     ; uni = {!!}
-     }
-
--}
+     { nat = λ {X} {Y} {Z} {f} {g} → †-naturality {X}{Y}{Z}{f}{g}
+     ; uni = λ {X} {Y} {Z} {f} {g} {h} → †-uniformity {X}{Y}{Z}{f}{g}{h}
+     ; cod = λ {X} {Y} {f} → †-codiagonal {X} {Y} {f} 
+   }

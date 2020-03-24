@@ -1,7 +1,7 @@
 {-# OPTIONS --cubical --safe #-}
 
 open import Level using (Level; _⊔_; Lift; lift) renaming (suc to ℓ-suc)
-open import Function using (id; _∘_)
+open import Function using (id; _∘_; _$_)
 open import Data.Nat using (ℕ; suc) renaming (_≤_ to _≤ᴺ_)
 open import Data.Unit using (⊤; tt)
 open import Data.Empty renaming (⊥ to 𝟎)
@@ -25,14 +25,15 @@ open import MonoidModule
 -}
 --*
 
-module Eliminators-L-bar {ℓ : Level} {M : Monoid} (OM : O-Monoid {ℓ} {ℓ} M) where
+module Eliminators-L-bar {ℓ ℓ′ : Level} {M : Monoid} (OM : O-Monoid {ℓ} {ℓ′} M) where
 
-module Def-L̅ (A : Set ℓ) where
+module Def-L̅ (A : Set (ℓ ⊔ ℓ′)) where
 
   open O-Monoid OM renaming (PO to PO-≤)
 
-  data L̅ : Set ℓ
-  data _⊑_ : L̅ → L̅ → Set ℓ
+  data L̅ : Set (ℓ ⊔ ℓ′)
+  data _⊑_ : L̅ → L̅ → Set (ℓ ⊔ ℓ′)
+  
   PO-⊑ : PartialOrder L̅
   _▶_ : 𝕄 → DirSeq PO-⊑ → DirSeq PO-⊑
   _▷-⊥ : DirSeq PO-≤ → DirSeq PO-⊑
@@ -82,12 +83,13 @@ module Def-L̅ (A : Set ℓ) where
 
   a ▶ s = DirSeq-mono s (a ▷_ ↑ ▷-monoʳ)
 
-  t ▷-⊥ = DirSeq-mono t (_▷ ⊥ ↑ ▷⊥-mono)
-
+  (seq ⇗ dir) ▷-⊥ =  -- DirSeq-mono (seq ⇗ dir) (_▷ ⊥ ↑ ▷⊥-mono) -- morally the same, module level issues
+    (_▷ ⊥) ∘ seq ⇗ λ n m →
+      (proj₁ $ dir n m) , (▷⊥-mono $ proj₁ $ proj₂ $ dir n m) , (▷⊥-mono $ proj₂ $ proj₂ $ dir n m)
 
   open PartialOrder.PartialOrder PO-⊑ using () renaming (A-set to L̅-Set)
 
-  record Arguments {ℓ-L̅ ℓ-⊑ : Level} : Set (ℓ ⊔ ℓ-suc (ℓ-L̅ ⊔ ℓ-⊑)) where
+  record Arguments {ℓ-L̅ ℓ-⊑ : Level} : Set (ℓ ⊔ ℓ′ ⊔ ℓ-suc (ℓ-L̅ ⊔ ℓ-⊑)) where
     field
       P-L̅  : L̅ → Set ℓ-L̅
       P-⊑  : ∀ {x y : L̅} → P-L̅ x → P-L̅ y → x ⊑ y → Set ℓ-⊑
@@ -134,7 +136,7 @@ module Def-L̅ (A : Set ℓ) where
                                                           (▷⊥-cont⃖ ⋁t)
       P-⊑-prop : ∀ {x⊑y : x ⊑ y} (px : P-L̅ x) (py : P-L̅ y) → IsProp (P-⊑ px py x⊑y)
 
-  record Eliminators {ℓ-L̅ ℓ-⊑ : Level} (args : Arguments {ℓ-L̅} {ℓ-⊑}) : Set (ℓ ⊔ ℓ-L̅ ⊔ ℓ-⊑) where
+  record Eliminators {ℓ-L̅ ℓ-⊑ : Level} (args : Arguments {ℓ-L̅} {ℓ-⊑}) : Set (ℓ ⊔ ℓ′ ⊔ ℓ-L̅ ⊔ ℓ-⊑)  where
     open Arguments args
   
     field
@@ -203,7 +205,7 @@ module Def-L̅ (A : Set ℓ) where
       ; ▷-sum = ⊑-antisym ▷-sum⃗ ▷-sum⃖
       ; ▷-neutrˡ = ⊑-antisym ▷-neutrˡ⃗ ▷-neutrˡ⃖
       }
-  L̅-OMM : Ordered-M-Module {ℓ′-⊑ = ℓ} OM L̅-MM
+  L̅-OMM : Ordered-M-Module {ℓ′-⊑ = ℓ ⊔ ℓ′} OM L̅-MM
   L̅-OMM = 
     record
       { ⊥ = ⊥
@@ -227,8 +229,8 @@ module Def-L̅ (A : Set ℓ) where
   L̅-CCOMM = record { ▷⊥-cont = λ ⋁t → ⊑-antisym (⨆-lub (λ n → ▷⊥-mono (Lub.is-ub ⋁t n)))
                                                 (▷⊥-cont⃖ ⋁t) }
 
-  L̅-CCOMMo : C-Complete-OM-Module-over A OM L̅-CCOMM
-  L̅-CCOMMo =
+  L̅-COMMo : C-Complete-OM-Module-over A OM L̅-CCOMM
+  L̅-COMMo =
     record { η = η }
 
   private
@@ -238,7 +240,7 @@ module Def-L̅ (A : Set ℓ) where
       COMM′ : Complete-OM-Module OM OMM′
       CCOMM′ : C-Complete-OM-Module COMM′
 
-  L̅-Initial : Initial-C-Complete-OM-Module-over L̅-CCOMMo
+  L̅-Initial : ∀ {ℓ-to ℓ-⊑-to : Level} → Initial-C-Complete-OM-Module-over ℓ-to ℓ-⊑-to L̅-COMMo
   L̅-Initial =
     record
       { H = λ CCOMMo′ → record
@@ -291,7 +293,7 @@ module Def-L̅ (A : Set ℓ) where
         h-elims = L̅-Elim h-args
         open Eliminators h-elims using () renaming (L̅-rec to h; ⊑-rec to h-⊑) public
         
-        module _ (G : C-Complete-OM-Module-Morphism-over L̅-CCOMMo CCOMMo′) where
+        module _ (G : C-Complete-OM-Module-Morphism-over L̅-COMMo CCOMMo′) where
           open Complete-OM-Module-Morphism-over G renaming (fun to g; f-⊑ to g-⊑; f-⊥ to g-⊥; f-▷ to g-▷; f-⨆ to g-⨆; f-η to g-η)
           gx≡hx-args : Arguments
           gx≡hx-args = record
@@ -313,5 +315,7 @@ module Def-L̅ (A : Set ℓ) where
 open Def-L̅
 
 
-L̅*-CCOMMo : ∀ {A B : Set ℓ} (f : A → L̅ B) → C-Complete-OM-Module-over A OM (L̅-CCOMM B)
-L̅*-CCOMMo f = record { η = f }
+L̅*-COMMo : ∀ {A B : Set (ℓ ⊔ ℓ′)} (f : A → L̅ B) → C-Complete-OM-Module-over A OM (L̅-CCOMM B)
+L̅*-COMMo f = record { η = f }
+
+

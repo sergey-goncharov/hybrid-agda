@@ -62,7 +62,7 @@ record ElgotIteration : Set (ℓ-suc ℓ) where
     _† : ∀ {X Y : Obj} → (X ➔ Y + X) → (X ➔ Y)
     fix : Fix _†
 
-record TotalConway (It : ElgotIteration) : Set (ℓ-suc ℓ) where
+record ConwayIteration (It : ElgotIteration) : Set (ℓ-suc ℓ) where
   open ElgotIteration It public
 
   field
@@ -192,33 +192,34 @@ record TotalUniConway  (It : ElgotIteration) {D : Category Ob} {CoC-D : Co-Carte
   bekić {f = f} {g = g} =
     begin
     [ ([ idm , g † ] ⊚ f) † , [ idm , ([ idm , g † ] ⊚ f) † ] ⊚ g † ]
-       -- using bekić₁ 
-       ≡⟨ bekić₁ ⟩
+         -- using bekić₁ 
+         ≡⟨ bekić₁ ⟩
     ([ (idm ⊕ inl) ⊚ ([ idm , g † ] ⊚ f) , (idm ⊕ inl) ⊚ g † ] †)
-       ≡⟨ cong _† $ []-cong₁ ⊚-assoc ⟩
+         ≡⟨ cong _† $ []-cong₁ ⊚-assoc ⟩
     ([ ((idm ⊕ inl) ⊚ [ idm , g † ]) ⊚ f , (idm ⊕ inl) ⊚ g † ] †)
-       ≡⟨ cong _† $ []-cong₁ $ trans (⊚-cong₁ ⊚-distrib-[]) $ ⊚-cong₁ $ []-cong₁ ⊚-unitʳ ⟩
-    [ [ idm ⊕ inl , (idm ⊕ inl) ⊚ g † ] ⊚ f , (idm ⊕ inl) ⊚ g † ] †      ≡˘⟨ cong _† $ []-cong₁ $ ⊚-cong₁ $ trans []-⊕ ([]-destruct ⊚-unitˡ ⊚-unitʳ) ⟩
+         ≡⟨ cong _† $ []-cong₁ $ trans (⊚-cong₁ ⊚-distrib-[]) $ ⊚-cong₁ $ []-cong₁ ⊚-unitʳ ⟩
+    [ [ idm ⊕ inl , (idm ⊕ inl) ⊚ g † ] ⊚ f , (idm ⊕ inl) ⊚ g † ] †
+         ≡˘⟨ cong _† $ []-cong₁ $ ⊚-cong₁ $ trans []-⊕ ([]-destruct ⊚-unitˡ ⊚-unitʳ) ⟩
     [ ([ idm , (idm ⊕ inl) ⊚ g † ] ⊚ ((idm ⊕ inl) ⊕ idm)) ⊚ f , (idm ⊕ inl) ⊚ g † ] †
-      ≡˘⟨ cong _† $ []-cong₁ $ ⊚-assoc ⟩
+         ≡˘⟨ cong _† $ []-cong₁ $ ⊚-assoc ⟩
     [ [ idm , (idm ⊕ inl) ⊚ g † ] ⊚ (((idm ⊕ inl) ⊕ idm) ⊚ f) , (idm ⊕ inl) ⊚ g † ] †
-       -- using naturality
-       ≡⟨ cong _† $ []-destruct (⊚-cong₁ $ []-cong₂ $ sym nat) (sym nat) ⟩
+         -- using naturality
+         ≡⟨ cong _† $ []-destruct (⊚-cong₁ $ []-cong₂ $ sym nat) (sym nat) ⟩
     [ [ idm , (((idm ⊕ inl) ⊕ idm) ⊚ g) † ] ⊚ (((idm ⊕ inl) ⊕ idm) ⊚ f) , (((idm ⊕ inl) ⊕ idm) ⊚ g) † ] †
-       -- using bekić₂
-       ≡⟨ cong _† $ trans bekić₂ $ cong _† $ sym ⊚-distrib-[] ⟩
+         -- using bekić₂
+         ≡⟨ cong _† $ trans bekić₂ $ cong _† $ sym ⊚-distrib-[] ⟩
     ((idm ⊕ inr) ⊚ [ ((idm ⊕ inl) ⊕ idm) ⊚ f , ((idm ⊕ inl) ⊕ idm) ⊚ g ]) † †
-       ≡⟨ cong (_† ∘ _†) $ ⊚-cong₂ $ sym ⊚-distrib-[] ⟩    
+         ≡⟨ cong (_† ∘ _†) $ ⊚-cong₂ $ sym ⊚-distrib-[] ⟩    
     ((idm ⊕ inr) ⊚ (((idm ⊕ inl) ⊕ idm) ⊚ [ f , g ])) † †
-       ≡⟨ cong (_† ∘ _†) $ trans ⊚-assoc $ ⊚-cong₁ $ trans ⊕-⊕ $
-               []-destruct (⊚-cong₂ ⊚-unitˡ) (⊚-cong₂ ⊚-unitʳ) ⟩    
+         ≡⟨ cong (_† ∘ _†) $ trans ⊚-assoc $ ⊚-cong₁ $ trans ⊕-⊕ $
+                 []-destruct (⊚-cong₂ ⊚-unitˡ) (⊚-cong₂ ⊚-unitʳ) ⟩    
     (((idm ⊕ inl) ⊕ inr) ⊚ [ f , g ]) † †
-      -- using codiagonal
-      ≡˘⟨ cod ⟩
+         -- using codiagonal
+         ≡˘⟨ cod ⟩
     ([ idm , inr ] ⊚ (((idm ⊕ inl) ⊕ inr) ⊚ [ f , g ])) †
-      ≡⟨ cong _† ⊚-assoc ⟩
+         ≡⟨ cong _† ⊚-assoc ⟩
     (([ idm , inr ] ⊚ ((idm ⊕ inl) ⊕ inr)) ⊚ [ f , g ]) †
-      ≡⟨ cong _† $ ⊚-cong₁ $ trans []-⊕ $ []-cong₁ ⊚-unitˡ ⟩
+         ≡⟨ cong _† $ ⊚-cong₁ $ trans []-⊕ $ []-cong₁ ⊚-unitˡ ⟩
     ([(idm ⊕ inl) , inr ⊚ inr ] ⊚ [ f , g ]) †
     ∎
       
@@ -231,25 +232,25 @@ record TotalUniConway  (It : ElgotIteration) {D : Category Ob} {CoC-D : Co-Carte
       bekić₁ {f = f} {g = g} =
          begin
          [ f † , [ idm , f † ] ⊚ g ]
-           ≡˘⟨ []-destruct (†-inl []-inl) $  ⊚-cong₁ $ []-cong₂ $ †-inl []-inl ⟩
+             ≡˘⟨ []-destruct (†-inl []-inl) $  ⊚-cong₁ $ []-cong₂ $ †-inl []-inl ⟩
          [ h † ⊚ inl , [ idm ,  h † ⊚ inl ] ⊚ g ]
-           ≡˘⟨ []-cong₂ $ ⊚-cong₁ $ []-cong₁ $ ⊚-unitʳ  ⟩  
+             ≡˘⟨ []-cong₂ $ ⊚-cong₁ $ []-cong₁ $ ⊚-unitʳ  ⟩  
          [ h † ⊚ inl , [ idm ⊚ idm , h † ⊚ inl ] ⊚ g ]
-           ≡˘⟨ []-cong₂ $ ⊚-cong₁ $ []-⊕ ⟩
+             ≡˘⟨ []-cong₂ $ ⊚-cong₁ $ []-⊕ ⟩
          [ h † ⊚ inl , ([ idm ,  h † ] ⊚ (idm ⊕ inl)) ⊚ g ]
-           ≡˘⟨ []-cong₂ $  ⊚-assoc ⟩
+             ≡˘⟨ []-cong₂ $  ⊚-assoc ⟩
          [ h † ⊚ inl , [ idm , h † ] ⊚ ((idm ⊕ inl) ⊚ g) ]
-           ≡˘⟨ []-cong₂ $ ⊚-cong₂ $ []-inr ⟩
+             ≡˘⟨ []-cong₂ $ ⊚-cong₂ $ []-inr ⟩
          [ h † ⊚ inl , [ idm ,  h † ] ⊚ (h ⊚ inr) ]
-           ≡⟨ []-cong₂ $ ⊚-assoc ⟩
+             ≡⟨ []-cong₂ $ ⊚-assoc ⟩
          [ h † ⊚ inl , ([ idm ,  h † ] ⊚ h) ⊚ inr ]
-           ≡⟨ []-cong₂ $ ⊚-cong₁ $ fix ⟩
+             ≡⟨ []-cong₂ $ ⊚-cong₁ $ fix ⟩
          [ h † ⊚ inl , h † ⊚ inr ] 
-           ≡˘⟨ ⊚-distrib-[] ⟩
+             ≡˘⟨ ⊚-distrib-[] ⟩
          h † ⊚ [ inl , inr ] 
-           ≡⟨ ⊚-cong₂ [inl,inr] ⟩
+             ≡⟨ ⊚-cong₂ [inl,inr] ⟩
          h † ⊚ idm
-           ≡⟨ ⊚-unitʳ ⟩
+             ≡⟨ ⊚-unitʳ ⟩
          h †
          ∎
            where h = [ (idm ⊕ inl) ⊚ f , (idm ⊕ inl) ⊚ g ]
@@ -260,25 +261,25 @@ record TotalUniConway  (It : ElgotIteration) {D : Category Ob} {CoC-D : Co-Carte
       bekić₂ {f = f} {g = g} = 
          begin
          [ [ idm , f † ] ⊚ g , f † ]
-           ≡˘⟨ []-destruct (⊚-cong₁ $ []-cong₂ $ †-inr []-inr) (†-inr []-inr) ⟩ 
+             ≡˘⟨ []-destruct (⊚-cong₁ $ []-cong₂ $ †-inr []-inr) (†-inr []-inr) ⟩ 
          [ [ idm , h †  ⊚ inr ] ⊚ g , h † ⊚ inr ] 
-           ≡˘⟨ []-cong₁ $  ⊚-cong₁ $  []-cong₁ $ ⊚-unitʳ ⟩ 
+             ≡˘⟨ []-cong₁ $  ⊚-cong₁ $  []-cong₁ $ ⊚-unitʳ ⟩ 
          [ [ idm ⊚ idm , h † ⊚ inr ] ⊚ g , h † ⊚ inr ]
-           ≡˘⟨ []-cong₁ $ ⊚-cong₁ $ []-⊕ ⟩  
+             ≡˘⟨ []-cong₁ $ ⊚-cong₁ $ []-⊕ ⟩  
          [ ([ idm , h † ] ⊚ (idm ⊕ inr)) ⊚ g , h † ⊚ inr ]
-           ≡˘⟨ []-cong₁ $ ⊚-assoc ⟩ 
+              ≡˘⟨ []-cong₁ $ ⊚-assoc ⟩ 
          [ [ idm , h † ] ⊚ ((idm ⊕ inr) ⊚ g) , h † ⊚ inr ]
-           ≡˘⟨ []-cong₁ $ ⊚-cong₂ $ []-inl ⟩ 
+             ≡˘⟨ []-cong₁ $ ⊚-cong₂ $ []-inl ⟩ 
          [ [ idm , h † ] ⊚ (h ⊚ inl) , h † ⊚ inr ]
-           ≡⟨ []-cong₁ $ ⊚-assoc  ⟩ 
+             ≡⟨ []-cong₁ $ ⊚-assoc  ⟩ 
          [ ([ idm , h † ] ⊚ h) ⊚ inl , h † ⊚ inr ]
-           ≡⟨ []-cong₁ $ ⊚-cong₁ $ fix ⟩
+              ≡⟨ []-cong₁ $ ⊚-cong₁ $ fix ⟩
          [ h † ⊚ inl ,  h † ⊚ inr ] 
-           ≡˘⟨ ⊚-distrib-[] ⟩
+             ≡˘⟨ ⊚-distrib-[] ⟩
          h † ⊚ [ inl , inr ] 
-           ≡⟨  ⊚-cong₂ [inl,inr] ⟩
+             ≡⟨  ⊚-cong₂ [inl,inr] ⟩
          h † ⊚ idm
-           ≡⟨ ⊚-unitʳ ⟩
+             ≡⟨ ⊚-unitʳ ⟩
          h †
          ∎
            where h = [ (idm ⊕ inr) ⊚ g , (idm ⊕ inr) ⊚ f ]
@@ -287,68 +288,68 @@ record TotalUniConway  (It : ElgotIteration) {D : Category Ob} {CoC-D : Co-Carte
   din : Din _†
   din {g = g} {h = h} =
      begin
-       ([ inl , h ] ⊚ g) †
-     ≡˘⟨ []-inl ⟩
-        [([ inl , h ] ⊚ g) † , [ idm , ([ inl , h ] ⊚ g) † ] ⊚ h ] ⊚ inl
-     ≡˘⟨ ⊚-cong₁ helper₁ ⟩    
-       [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] † ⊚ inl
-     ≡⟨ trans (⊚-cong₁ (sym helper₂)) (trans (sym ⊚-assoc) (⊚-cong₂ []-inl))  ⟩
-       [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] † ⊚ inr
-     ≡⟨ trans
-           (⊚-cong₁ (sym fix))
-           (trans
-             (sym ⊚-assoc)
-             (trans
-               (⊚-cong₂ []-inr)
-               (trans
-                 ⊚-assoc
-                 (⊚-cong₁
-                   (trans []-⊕
-                     (trans
-                       ([]-destruct ⊚-unitˡ refl)
-                       refl)))))) ⟩
-       [ idm , [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] † ⊚ inl ] ⊚ g
-         ≡⟨ trans (cong (λ w → [ idm , w ⊚ inl ] ⊚ g) helper₁) (cong (λ w → [ idm , w ] ⊚ g) []-inl) ⟩
-       [ idm , ([ inl , g ] ⊚ h) † ] ⊚ g
+     ([ inl , h ] ⊚ g) †
+          ≡˘⟨ []-inl ⟩
+     [([ inl , h ] ⊚ g) † , [ idm , ([ inl , h ] ⊚ g) † ] ⊚ h ] ⊚ inl
+          ≡˘⟨ ⊚-cong₁ helper₁ ⟩    
+     [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] † ⊚ inl
+          ≡⟨ trans (⊚-cong₁ (sym helper₂)) (trans (sym ⊚-assoc) (⊚-cong₂ []-inl))  ⟩
+     [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] † ⊚ inr
+          -- using fix
+          ≡⟨ trans (⊚-cong₁ (sym fix)) (trans (sym ⊚-assoc) (trans (⊚-cong₂ []-inr) ⊚-assoc)) ⟩ 
+     ([ idm , [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] † ] ⊚ (idm ⊕ inl)) ⊚ g 
+          ≡⟨ ⊚-cong₁ (trans []-⊕ ([]-cong₁ ⊚-unitˡ)) ⟩
+     [ idm , [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] † ⊚ inl ] ⊚ g
+          ≡⟨ trans (cong (λ w → [ idm , w ⊚ inl ] ⊚ g) helper₁) (cong (λ w → [ idm , w ] ⊚ g) []-inl) ⟩
+     [ idm , ([ inl , g ] ⊚ h) † ] ⊚ g
      ∎
      where
       helper₁ : ∀ {X Y Z : Obj} {g : X ➔ Y + Z} {h : Z ➔ Y + X} →
         [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] † ≡ [([ inl , h ] ⊚ g) † , [ idm , ([ inl , h ] ⊚ g) † ] ⊚ h ] 
       helper₁{X}{Y}{Z}{g = g}{h = h} =
         begin
-          (([ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] †))
-        ≡⟨ cong _† (trans
-                   ([]-destruct
-                     (trans
-                       (⊚-cong₁
-                         (trans
-                           ([]-destruct
-                             (trans (⊚-unitʳ)
-                               (trans (sym ⊚-unitʳ) (sym []-inl)) )
-                               (sym ⊚-unitʳ))
-                           (sym []-⊕)))
-                     (sym ⊚-assoc))
-                     (trans (⊚-cong₁ (sym []-inl)) (sym ⊚-assoc))) ( sym ⊚-distrib-[])) ⟩
-           (([ idm ⊕ inl , inr ⊚ inr ] ⊚ [ (inl ⊕ idm) ⊚ g , inl ⊚ h ]) †)
-        ≡˘⟨ bekić{f = (inl ⊕ idm) ⊚ g}{g = inl ⊚ h} ⟩
-           [ ([ idm , (inl ⊚ h) † ] ⊚ ((inl ⊕ idm) ⊚ g))† , [ idm ,
-             ([ idm , (inl ⊚ h) † ] ⊚ ((inl ⊕ idm) ⊚ g))† ] ⊚ ((inl ⊚ h) †) ]
-        ≡⟨ []-destruct
-              (cong _†
-                (trans ⊚-assoc (cong (_⊚ g) (trans []-⊕ ([]-destruct ⊚-unitˡ (trans ⊚-unitʳ inl-h†))))))
-                (⊚-cong ([]-destruct refl (cong _† (trans ⊚-assoc (⊚-cong₁ (trans []-⊕ ([]-destruct ⊚-unitˡ (trans ⊚-unitʳ inl-h†))))))) inl-h†) ⟩
-          [([ inl , h ] ⊚ g) † , [ idm , ([ inl , h ] ⊚ g)† ] ⊚ h ] 
+        [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] †
+            ≡˘⟨ cong _† $ []-cong₁ $ ⊚-cong₁ $ []-destruct []-inl ⊚-unitʳ ⟩
+        ([ [ (idm ⊕ inl) ⊚ inl , (inr ⊚ inr) ⊚ idm ] ⊚ g , (idm ⊕ inl) ⊚ h ] †)
+            ≡˘⟨ cong _† $ trans ⊚-distrib-[] $
+                  []-destruct
+                    (trans ⊚-assoc $ ⊚-cong₁ []-⊕)
+                    (trans ⊚-assoc $ ⊚-cong₁ []-inl) ⟩
+        (([ idm ⊕ inl , inr ⊚ inr ] ⊚ [ (inl ⊕ idm) ⊚ g , inl ⊚ h ]) †)
+            ≡˘⟨ bekić{f = (inl ⊕ idm) ⊚ g}{g = inl ⊚ h} ⟩
+                 [ ([ idm , (inl ⊚ h) † ] ⊚ ((inl ⊕ idm) ⊚ g))† ,
+        [ idm , ([ idm , (inl ⊚ h) † ] ⊚ ((inl ⊕ idm) ⊚ g))† ] ⊚ ((inl ⊚ h) †) ]
+            ≡⟨ cong2 (λ w₁ w₂ → [ w₁ † ,  [ idm , w₂ † ] ⊚ ((inl ⊚ h) †) ])
+                 (trans ⊚-assoc $ cong (_⊚ g) $ trans []-⊕ $ []-destruct ⊚-unitˡ ⊚-unitʳ)
+                 (trans ⊚-assoc $ cong (_⊚ g) $ trans []-⊕ $ []-destruct ⊚-unitˡ ⊚-unitʳ) ⟩
+        [ ([ inl , (inl ⊚ h) † ] ⊚ g) † , [ idm , ([ inl , (inl ⊚ h) † ] ⊚ g) † ] ⊚ ((inl ⊚ h) †) ]
+             ≡⟨ []-destruct
+                 (cong _† $ ⊚-cong₁ $ []-cong₂ inl-h†)
+                 (cong2 (λ w₁ w₂ → [ idm , ([ inl , w₁ ] ⊚ g) † ] ⊚ w₂) inl-h† inl-h†) ⟩
+        [([ inl , h ] ⊚ g) † , [ idm , ([ inl , h ] ⊚ g)† ] ⊚ h ] 
         ∎
           where
             inl-h† : (inl ⊚ h) † ≡ h
-            inl-h† = trans (sym fix) (trans ⊚-assoc (trans (⊚-cong₁ []-inl) ⊚-unitˡ))
+            inl-h† = trans (sym fix) $ trans ⊚-assoc $ trans (⊚-cong₁ []-inl) ⊚-unitˡ
 
       helper₂ : ∀ {X Y Z : Obj} {g : X ➔ Y + Z} {h : Z ➔ Y + X} →
-        [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] † ⊚ swap ≡  [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] †
-      helper₂ = trans †-swap (
-        cong _† (trans (⊚-cong₂ []-swap) (trans ⊚-distrib-[] ([]-destruct
-                         (trans ⊚-assoc (⊚-cong₁ (trans ⊕-⊕ ([]-destruct (⊚-cong₂ ⊚-unitˡ) (⊚-cong₂ []-inl)))))
-                         (trans ⊚-assoc (⊚-cong₁ (trans ⊕-⊕ ([]-destruct (⊚-cong₂ ⊚-unitˡ) (⊚-cong₂ []-inr)))))))))
+              [ (idm ⊕ inr) ⊚ g , (idm ⊕ inl) ⊚ h ] † ⊚ swap ≡ [ (idm ⊕ inr) ⊚ h , (idm ⊕ inl) ⊚ g ] †
+      helper₂ = trans †-swap $ 
+              cong _† $ trans (⊚-cong₂ []-swap) (trans ⊚-distrib-[] $ []-destruct
+                         (trans ⊚-assoc $ ⊚-cong₁ $ trans ⊕-⊕ $ []-destruct (⊚-cong₂ ⊚-unitˡ) $ ⊚-cong₂ []-inl)
+                         (trans ⊚-assoc $ ⊚-cong₁ $ trans ⊕-⊕ $ []-destruct (⊚-cong₂ ⊚-unitˡ) $ ⊚-cong₂ []-inr))
 
 
+module _ (It : ElgotIteration) {D : Category Ob} {CoC-D : Co-Cartesian D}
+             {F : Functor D C id} (J : CoC-Functor CoC-D CoC F) where
 
+  TotalUniConway→ConwayIteration : TotalUniConway It J → ConwayIteration It 
+  TotalUniConway→ConwayIteration TC =
+    record {
+      nat = nat ;
+      din = din ;
+      cod = cod
+    }
+
+    where
+      open TotalUniConway TC

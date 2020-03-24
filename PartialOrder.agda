@@ -8,9 +8,11 @@ open import Data.Nat.Properties using (m≤m⊔n; n≤m⊔n)
 open import Data.Product using (Σ; _×_; _,_; proj₁; proj₂; ∃-syntax)
 open import Function using (_∘_; _$_)
 
-open import CubicalIdentity using (_≡_; refl; cong; trans; subst; →-≡; subst≡→[]≡)
+open import CubicalIdentity using (_≡_; refl; cong; trans; sym; subst; subst2; →-≡; subst≡→[]≡; builtin-to-≡)
 open CubicalIdentity.≡-Reasoning
 open import Sets
+open import Cantor
+
 
 --*
 {-
@@ -24,7 +26,7 @@ module PartialOrder where
 
 private
   variable
-    ℓ ℓ′ : Level
+    ℓ ℓ′ ℓ′′ : Level
 
 -- Partial Order (where ≤ is a Proposition)
 record PartialOrder (A : Set ℓ) : Set (ℓ ⊔ (ℓ-suc ℓ′)) where
@@ -36,6 +38,9 @@ record PartialOrder (A : Set ℓ) : Set (ℓ ⊔ (ℓ-suc ℓ′)) where
     ≤-antisym : ∀ {x y : A} → x ≤ y → y ≤ x → x ≡ y
     ≤-trans : ∀ {x y z : A} → x ≤ y → y ≤ z → x ≤ z
     ≤-prop : ∀ {x y : A} → IsProp (x ≤ y)
+
+  ≡-to-≤ : ∀ {x y : A} → x ≡ y → x ≤ y
+  ≡-to-≤{x} x≡y = subst (λ z → x ≤ z) x≡y ≤-refl
 
   -- The carrier is a set (using Theorem 7.2.2 from the HoTT book)
   A-set : IsSet A
@@ -92,7 +97,7 @@ TrivPartialOrder =
 
 private
   variable
-    A B : Set ℓ
+    A B C : Set ℓ
 
 module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
   open PartialOrder PO
@@ -145,16 +150,17 @@ module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
                                       ; is-l = is-l-l }
 
   Lub→Σ-≡ : ∀ {s : Seq} (l l′ : Lub s) → (Lub→Σ l ≡ Lub→Σ l′) → l ≡ l′
-  Lub→Σ-≡ l l′ l≡l′ = λ i → record
+  Lub→Σ-≡ l l′ l≡l′ i = record
                               { ub = proj₁ (l≡l′ i)
-                              ; is-ub = proj₁ (proj₂ (l≡l′ i))
-                              ; is-l = proj₂ (proj₂ (l≡l′ i))
+                              ; is-ub = proj₁ $ proj₂ (l≡l′ i)
+                              ; is-l  = proj₂ $ proj₂ (l≡l′ i)
                               }
 
   Lub-≡ : ∀ {s : Seq} {l l′ : Lub s} → ub l ≡ ub l′ → l ≡ l′
-  Lub-≡ {s} {l} {l′} ub≡ub′ = Lub→Σ-≡ l l′ (Σ-Prop-≡ (IsProp-× (IsProp-∀ (λ _ → ≤-prop))
-                                                                (IsProp-∀′ (IsProp-∀ (λ _ → ≤-prop))))
-                                                      ub≡ub′)
+  Lub-≡ {s} {l} {l′} ub≡ub′ =
+    Lub→Σ-≡ l l′ (Σ-Prop-≡ (IsProp-× (IsProp-∀ (λ _ → ≤-prop))
+                                       (IsProp-∀′ (IsProp-∀ (λ _ → ≤-prop))))
+                   ub≡ub′)
 
   -- Lubs are unique
   Lub-prop : ∀ (s : Seq) → IsProp (Lub s)
@@ -217,6 +223,14 @@ module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
 
   infix 4 _‖⇗‖_
 
+module _ {PO : PartialOrder {ℓ} {ℓ′} A} {PO′ : PartialOrder {ℓ}{ℓ′} B} {PO′′ : PartialOrder {ℓ}{ℓ′} C} where
+  open PartialOrder PO
+  open PartialOrder PO′
+  open PartialOrder PO′′
+
+  mono-∘ : ∀ (g : A → B) → Mono PO PO′ g → (f : B → C) → Mono PO′ PO′′ f → Mono PO PO′′ (f ∘ g)
+  mono-∘ g mon-g f mon-f {x}{x′} x≤x′ = mon-f (mon-g x≤x′)
+
 module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
   open PartialOrder PO
 
@@ -262,18 +276,18 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
                                             , IncSeq-trans (seq ↗ inc) m (n ⊔ᴺ m) (n≤m⊔n n m)
                                             , IncSeq-trans (seq ↗ inc) n (n ⊔ᴺ m) (m≤m⊔n n m)
 
-  -- this of little help because there are many constant
-  -- sequences with different directedness proofs
-  DirSeq-const : A → DirSeq PO
-  DirSeq-const x = (λ _ → x) ⇗ (λ n m → n ⊔ᴺ m , (≤-refl , ≤-refl))
+  -- -- this of little help because there are many constant
+  -- -- sequences with different directedness proofs
+  -- DirSeq-const : A → DirSeq PO
+  -- DirSeq-const x = (λ _ → x) ⇗ (λ n m → n ⊔ᴺ m , (≤-refl , ≤-refl))
 
-  ‖DirSeq‖-const : A → ‖DirSeq‖ PO
-  ‖DirSeq‖-const x = (λ _ → x) ‖⇗‖ (λ n m → ∣ n ⊔ᴺ m , (≤-refl , ≤-refl) ∣)
+  -- ‖DirSeq‖-const : A → ‖DirSeq‖ PO
+  -- ‖DirSeq‖-const x = (λ _ → x) ‖⇗‖ (λ n m → ∣ n ⊔ᴺ m , (≤-refl , ≤-refl) ∣)
 
   module _ {PO′ : PartialOrder {ℓ} {ℓ′} B} where 
     DirSeq-mono : DirSeq PO → MonoFun PO PO′ → DirSeq PO′
-    DirSeq-mono (seq ⇗ dir) (fun ↑ mono) = fun ∘ seq ⇗ λ n m → (proj₁ (dir n m)) , (mono (proj₁ (proj₂ (dir n m)))
-                                                                               , (mono (proj₂ (proj₂ (dir n m)))))
+    DirSeq-mono (seq ⇗ dir) (fun ↑ mono) = fun ∘ seq ⇗ λ n m →
+      (proj₁ $ dir n m) , (mono $ proj₁ $ proj₂ $ dir n m) , (mono $ proj₂ $ proj₂ $ dir n m)
   
     ‖DirSeq‖-mono : ‖DirSeq‖ PO → MonoFun PO PO′ → ‖DirSeq‖ PO′
     ‖DirSeq‖-mono (seq ‖⇗‖ dir) (fun ↑ mono) = (fun ∘ seq)
@@ -281,3 +295,26 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
                                                                  (λ { (k , sn≤sk , sm≤sk)
                                                                   → ∣ k , mono sn≤sk , mono sm≤sk ∣ })
                                                                  (dir n m))
+
+  dseq-dseq→dseq : ∀ (σ : ℕ → ℕ → A) (τ : ∀ n → ‖Dir‖ PO (σ n)) →
+                     (∀ (n m : ℕ) → ∃[ k ] ((Cofinal PO (σ n) (σ k)) × (Cofinal PO (σ m) (σ k)))) →
+                     ‖Dir‖ PO (λ n → σ (π₁⁻¹ n) (π₂⁻¹ n)) 
+  dseq-dseq→dseq σ τ cof n m =
+    let
+      ks , q , r = cof ns ms -- number of the bounding chain and cofinality proofs
+      ks[n′] , a = q $ ns[n] -- a : ns[n] ≤ ks[n′]
+      ks[m′] , b = r $ ms[m] -- b : ms[m] ≤ ks[m′]
+    in
+      -- c : ks[n′] ≤ ks[k′]   d : ks[m′] ≤ ks[k′]
+      ‖‖-map (λ (ks[k′] , c , d) →
+                 π ks ks[k′]
+               , ≤-trans a (≤-trans c (subst2 (λ l r → σ (proj₁ $ cof ns ms) ks[k′] ≤ σ l r)
+                                   (sym $ builtin-to-≡ π₁⁻¹π)
+                                   (sym $ builtin-to-≡ (π₂⁻¹π {n = proj₁ $ cof ns ms})) ≤-refl))
+               , ≤-trans b (≤-trans d (subst2 (λ l r → σ (proj₁ $ cof ns ms) ks[k′] ≤ σ l r)
+                                   (sym $ builtin-to-≡ π₁⁻¹π)
+                                   (sym $ builtin-to-≡ (π₂⁻¹π {n = proj₁ $ cof ns ms})) ≤-refl))) 
+      (τ ks ks[n′] ks[m′])
+        where
+          ns = π₁⁻¹ n; ms = π₁⁻¹ m; ns[n] = π₂⁻¹ n; ms[m] = π₂⁻¹ m
+
