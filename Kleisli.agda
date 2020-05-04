@@ -44,6 +44,10 @@ record Kleisli (T : Set ℓ → Set ℓ) : Set (ℓ-suc ℓ) where
   idₖ = ηₓ
   _⋄_ : ∀ {A B C : Set ℓ} → (B ⟶ C) → (A ⟶ B) → (A ⟶ C)
   _⋄_ g f = g * ∘ f
+
+  -- ⋄-assoc : ∀ {A B C D : Set ℓ} {f : A ⟶ B} {g : B ⟶ C} {h : C ⟶ D}
+  --     → h ⋄ (g ⋄ f) ≡ (h ⋄ g) ⋄ f
+  -- ⋄-assoc = {!!}    
   
   field
     ηₓ-unitˡ : ∀ {X : Set ℓ} → (ηₓ {X}) * ≡ id {A = T X}

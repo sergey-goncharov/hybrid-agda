@@ -92,7 +92,7 @@ module Def-L̅ (A : Set (ℓ ⊔ ℓ′)) where
   record Arguments {ℓ-L̅ ℓ-⊑ : Level} : Set (ℓ ⊔ ℓ′ ⊔ ℓ-suc (ℓ-L̅ ⊔ ℓ-⊑)) where
     field
       P-L̅  : L̅ → Set ℓ-L̅
-      P-⊑  : ∀ {x y : L̅} → P-L̅ x → P-L̅ y → x ⊑ y → Set ℓ-⊑
+      P-⊑  : P-L̅ x → P-L̅ y → x ⊑ y → Set ℓ-⊑
 
     P-Dir : DirSeq PO-⊑ → Set (ℓ-L̅ ⊔ ℓ-⊑)
     P-Dir s = Σ (∀ (n : ℕ) → P-L̅ (DirSeq.seq s n))
@@ -140,10 +140,10 @@ module Def-L̅ (A : Set (ℓ ⊔ ℓ′)) where
     open Arguments args
   
     field
-      L̅-rec : (x : L̅) → P-L̅ x
+      L̅-rec : ∀ (x : L̅) → P-L̅ x
       ⊑-rec : ∀ (x⊑y : x ⊑ y) → P-⊑ (L̅-rec x) (L̅-rec y) x⊑y
 
-    Dir-rec : (s : DirSeq PO-⊑) → P-Dir s
+    Dir-rec : ∀ (s : DirSeq PO-⊑) → P-Dir s
     Dir-rec = λ { (seq ⇗ dir) → ( (λ n → L̅-rec (seq n))
                                 , (λ n m → ⊑-rec (proj₁ (proj₂ (dir n m))) ,
                                             ⊑-rec (proj₂ (proj₂ (dir n m))))  ) }
@@ -288,7 +288,7 @@ module Def-L̅ (A : Set (ℓ ⊔ ℓ′)) where
                    ; P-▷⊥-cont⃖ = λ seq dir ⋁t → subst (λ y → Lub.ub ⋁t ▷′ ⊥′ ⊑′ y)
                                                        (sym (▷′⊥′-cont ⋁t)) ⊑′-refl
                    ; P-⊑-prop = λ hx hy hp hq → ⊑′-prop hp hq
-                  }
+                   }
         h-elims : Eliminators h-args
         h-elims = L̅-Elim h-args
         open Eliminators h-elims using () renaming (L̅-rec to h; ⊑-rec to h-⊑) public

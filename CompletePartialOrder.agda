@@ -25,19 +25,19 @@ open import PartialOrder
   
   This module introduces three notions of completeness for partial orders:
 
-  (a) chain completeness
+  (a) extensional directed completeness
   (b) intensional directed completeness
-  (c) extensional directed completeness
+  (c) chain completeness
 
   These are related as follows: 
   
-  (c) -> (b) (‖DCPO‖→DCPO below)
-  (b) -> (a) (DCPO→ωCPO below)
-  (a) -> (c) under decidability of the carrier (see module DecidableOrder)
-  (b) -> (c) under countable choice (DCPO→‖DCPO‖ below)
+  (a) -> (b) (‖DCPO‖→DCPO below)
+  (b) -> (c) (DCPO→ωCPO below)
+  (b) -> (a) under countable choice (DCPO→‖DCPO‖ below)
+  (c) -> (a) under decidability of the carrier (see module DecidableOrder)
 
   For (a), (b) and (c) there are three corresponding notions of continuity 
-  below and a formalization of Kleene fixpoint theorem based on (a)
+  below and a formalization of Kleene fixpoint theorem based on (c)
 
 -}
 --*

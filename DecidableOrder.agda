@@ -95,9 +95,9 @@ module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
 
     -- Exercise 3.19. from the HoTT book
  
-    recall-ℕ-choice' : ∀ (P : ℕ → Set ℓ′) → (∀ (n : ℕ) → Dec (P n)) → ‖ ∃[ n ] P n ‖
+    restore-ωC' : ∀ (P : ℕ → Set ℓ′) → (∀ (n : ℕ) → Dec (P n)) → ‖ ∃[ n ] P n ‖
           → ∃[ m ] ‖ (P m × ∀ (k : ℕ) → (suc k) ≤ᴺ m → ¬ P k) ‖
-    recall-ℕ-choice' P dec ∃‖nPn‖ = ‖‖-Rec h' (h P dec) ∃‖nPn‖
+    restore-ωC' P dec ∃‖nPn‖ = ‖‖-Rec h' (h P dec) ∃‖nPn‖
       where 
         h : ∀ (P : ℕ → Set ℓ′) → (∀ (n : ℕ) → Dec (P n)) → ∃[ n ] P n 
            → ∃[ m ] ‖ (P m × ∀ (k : ℕ) → (suc k) ≤ᴺ m → ¬ P k) ‖
@@ -107,13 +107,13 @@ module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
         h' : IsProp (∃[ m ] ‖ (P m × ∀ (k : ℕ) → (suc k) ≤ᴺ m → ¬ P k) ‖)
         h' (n , p) (m , q) = Σ-Prop-≡ ‖‖-prop (b-search-uniq' P dec n m p q)
     
-    recall-ℕ-choice : ∀ (P : ℕ → Set ℓ′) → (∀ (n : ℕ) → Dec (P n)) → ‖ ∃[ n ] P n ‖ → ∃[ n ] P n
-    recall-ℕ-choice P dec ‖∃nPn‖ with (recall-ℕ-choice' P dec  ‖∃nPn‖)
-    recall-ℕ-choice P dec ‖∃nPn‖ | m , p = ∃‖‖→∃ P dec (m , (‖‖-map  proj₁ p))
+    restore-ωC : ∀ (P : ℕ → Set ℓ′) → (∀ (n : ℕ) → Dec (P n)) → ‖ ∃[ n ] P n ‖ → ∃[ n ] P n
+    restore-ωC P dec ‖∃nPn‖ with (restore-ωC' P dec  ‖∃nPn‖)
+    restore-ωC P dec ‖∃nPn‖ | m , p = ∃‖‖→∃ P dec (m , (‖‖-map  proj₁ p))
 
     dirseq-untrunc : (∀ (x y : A) → Dec (x ⊑ y)) → (n m : ℕ) → ∃[ k ] ((t ⟪ n ⟫ ⊑ t ⟪ k ⟫) × (t ⟪ m ⟫ ⊑ t ⟪ k ⟫))
     dirseq-untrunc dec n m =
-      recall-ℕ-choice
+      restore-ωC
         (λ k → (t ⟪ n ⟫) ⊑ (t ⟪ k ⟫) × (t ⟪ m ⟫) ⊑ (t ⟪ k ⟫))
         (λ l → (dec (t ⟪ n ⟫) (t ⟪ l ⟫) ×-dec dec (t ⟪ m ⟫) (t ⟪ l ⟫)))
         (t .‖DirSeq‖.dir n m)

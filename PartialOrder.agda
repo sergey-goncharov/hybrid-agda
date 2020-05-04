@@ -45,9 +45,13 @@ record PartialOrder (A : Set ℓ) : Set (ℓ ⊔ (ℓ-suc ℓ′)) where
   -- The carrier is a set (using Theorem 7.2.2 from the HoTT book)
   A-set : IsSet A
   A-set = A-is-set A (λ x y → x ≤ y × y ≤ x)
-                     (λ { (x≤y₁ , y≤x₁) (x≤y₂ , y≤x₂) i → ≤-prop x≤y₁ x≤y₂ i
-                                                        , ≤-prop y≤x₁ y≤x₂ i})
-                     (≤-refl , ≤-refl) (λ { (x≤y , y≤x) → ≤-antisym x≤y y≤x})
+                     (λ { (x≤y₁ , y≤x₁) (x≤y₂ , y≤x₂) i →
+                         ≤-prop x≤y₁ x≤y₂ i , ≤-prop y≤x₁ y≤x₂ i})
+                     (≤-refl , ≤-refl)
+                     (λ { (x≤y , y≤x) → ≤-antisym x≤y y≤x})
+
+  Is-⊥ : (x : A) → Set (ℓ ⊔ ℓ′)
+  Is-⊥ x = ∀ (y : A) → x ≤ y
 
 TrivPartialOrder : PartialOrder ⊤
 TrivPartialOrder =
@@ -118,13 +122,17 @@ module _ (PO : PartialOrder {ℓ} {ℓ′} A) where
   Inc : Seq → Set ℓ′
   Inc seq = ∀ (n : ℕ) → seq n ≤ seq (suc n)
 
+  -- Directedness of two elements
+  Directed : Seq → ℕ → ℕ → Set ℓ′
+  Directed seq n m = ∃[ k ] ((seq n ≤ seq k) × (seq m ≤ seq k)) 
+
   -- Intensional Directedness (non-truncated)
   Dir : Seq → Set ℓ′
-  Dir seq = ∀ (n m : ℕ) → ∃[ k ] ((seq n ≤ seq k) × (seq m ≤ seq k)) 
+  Dir seq = ∀ (n m : ℕ) → Directed seq n m
 
   -- Extensional Directedness (truncated)
   ‖Dir‖ : Seq → Set ℓ′
-  ‖Dir‖ seq = ∀ (n m : ℕ) → ‖ ∃[ k ] ((seq n ≤ seq k) × (seq m ≤ seq k)) ‖
+  ‖Dir‖ seq = ∀ (n m : ℕ) → ‖ Directed seq n m ‖
 
   Is-ub : Seq → A → Set ℓ′
   Is-ub s ub = ∀ n → s n ≤ ub
@@ -255,9 +263,10 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
   -- Equality characterization for truncated directed sequences
   ‖DirSeq‖-≡ : ∀ {s t : ℕ → A} {dirₛ : ‖Dir‖ PO s} {dirₜ : ‖Dir‖ PO t}
                → (s ≡ t) → _≡_ {A = ‖DirSeq‖ {A = A} PO} (s ‖⇗‖ dirₛ) (t ‖⇗‖ dirₜ)
-  ‖DirSeq‖-≡ {s} {t} {dirₛ} {dirₜ} s≡t = λ i → s≡t i
-                                               ‖⇗‖ subst≡→[]≡ {P = ‖Dir‖ PO} {p = dirₛ} {q = dirₜ} {x≡y = s≡t}
-                                                              (→-≡ (λ _ → →-≡ (λ _ → ‖‖-prop _ _))) i
+  ‖DirSeq‖-≡ {s} {t} {dirₛ} {dirₜ} s≡t i =
+     s≡t i ‖⇗‖ (subst≡→[]≡
+                  {P = ‖Dir‖ PO} {p = dirₛ} {q = dirₜ} {x≡y = s≡t}
+                  (→-≡ (λ _ → →-≡ (λ _ → ‖‖-prop _ _))) i)
 
   Dir-→ : ∀ {s t : ℕ → A} (dir : Dir PO s) → (s ≡ t) → Dir PO t
   Dir-→ dir s≡t = subst (Dir PO) s≡t dir
@@ -267,22 +276,22 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
   IncSeq-mono (seq ↗ inc) n (suc m) = ≤-trans (IncSeq-mono (seq ↗ inc) n m) (inc (m +ᴺ n))
 
   IncSeq-trans : ∀ (s : IncSeq PO) (n m : ℕ) → n ≤ᴺ m → s [ n ] ≤ s [ m ]
-  IncSeq-trans s n m n≤ᴺm = subst (λ m → (s [ n ]) ≤ (s [ m ]))
-                                  (proj₂ (≤ᴺ-natural n≤ᴺm))
-                                  (IncSeq-mono s _ _)
+  IncSeq-trans s n m n≤ᴺm =
+     subst (λ m → (s [ n ]) ≤ (s [ m ]))
+           (proj₂ (≤ᴺ-natural n≤ᴺm))
+           (IncSeq-mono s _ _)
 
   IncSeq→DirSeq : IncSeq PO → DirSeq PO
-  IncSeq→DirSeq (seq ↗ inc) = seq ⇗ λ m n → (n ⊔ᴺ m) 
-                                            , IncSeq-trans (seq ↗ inc) m (n ⊔ᴺ m) (n≤m⊔n n m)
-                                            , IncSeq-trans (seq ↗ inc) n (n ⊔ᴺ m) (m≤m⊔n n m)
+  IncSeq→DirSeq (seq ↗ inc) = seq ⇗ λ m n →
+      (n ⊔ᴺ m) 
+    , IncSeq-trans (seq ↗ inc) m (n ⊔ᴺ m) (n≤m⊔n n m)
+    , IncSeq-trans (seq ↗ inc) n (n ⊔ᴺ m) (m≤m⊔n n m)
 
-  -- -- this of little help because there are many constant
-  -- -- sequences with different directedness proofs
-  -- DirSeq-const : A → DirSeq PO
-  -- DirSeq-const x = (λ _ → x) ⇗ (λ n m → n ⊔ᴺ m , (≤-refl , ≤-refl))
+  DirSeq-const : A → DirSeq PO
+  DirSeq-const x = (λ _ → x) ⇗ (λ n m → n ⊔ᴺ m , (≤-refl , ≤-refl))
 
-  -- ‖DirSeq‖-const : A → ‖DirSeq‖ PO
-  -- ‖DirSeq‖-const x = (λ _ → x) ‖⇗‖ (λ n m → ∣ n ⊔ᴺ m , (≤-refl , ≤-refl) ∣)
+  ‖DirSeq‖-const : A → ‖DirSeq‖ PO
+  ‖DirSeq‖-const x = (λ _ → x) ‖⇗‖ (λ n m → ∣ n ⊔ᴺ m , (≤-refl , ≤-refl) ∣)
 
   module _ {PO′ : PartialOrder {ℓ} {ℓ′} B} where 
     DirSeq-mono : DirSeq PO → MonoFun PO PO′ → DirSeq PO′
@@ -296,15 +305,37 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
                                                                   → ∣ k , mono sn≤sk , mono sm≤sk ∣ })
                                                                  (dir n m))
 
-  dseq-dseq→dseq : ∀ (σ : ℕ → ℕ → A) (τ : ∀ n → ‖Dir‖ PO (σ n)) →
+  -- intensional diagonalization
+  dseq-dseq→dseq : ∀ (σ : ℕ → ℕ → A) (τ : ∀ n → Dir PO (σ n)) →
                      (∀ (n m : ℕ) → ∃[ k ] ((Cofinal PO (σ n) (σ k)) × (Cofinal PO (σ m) (σ k)))) →
-                     ‖Dir‖ PO (λ n → σ (π₁⁻¹ n) (π₂⁻¹ n)) 
+                     Dir PO (λ n → σ (π₁⁻¹ n) (π₂⁻¹ n)) 
+
   dseq-dseq→dseq σ τ cof n m =
-    let
-      ks , q , r = cof ns ms -- number of the bounding chain and cofinality proofs
+   let
+      ks , q , r = cof ns ms -- number of the bounding chain and the cofinality proofs
       ks[n′] , a = q $ ns[n] -- a : ns[n] ≤ ks[n′]
       ks[m′] , b = r $ ms[m] -- b : ms[m] ≤ ks[m′]
+      ks[k′] , c , d = τ ks ks[n′] ks[m′]
     in
+      π ks ks[k′]
+      , ( ≤-trans a (≤-trans c (subst2 (λ l r → σ (proj₁ $ cof ns ms) ks[k′] ≤ σ l r)
+                                   (sym $ builtin-to-≡ π₁⁻¹π)
+                                   (sym $ builtin-to-≡ (π₂⁻¹π {n = proj₁ $ cof ns ms})) ≤-refl)))
+      , ( ≤-trans b (≤-trans d (subst2 (λ l r → σ (proj₁ $ cof ns ms) ks[k′] ≤ σ l r)
+                                   (sym $ builtin-to-≡ π₁⁻¹π)
+                                   (sym $ builtin-to-≡ (π₂⁻¹π {n = proj₁ $ cof ns ms})) ≤-refl)))
+        where
+          ns = π₁⁻¹ n; ms = π₁⁻¹ m; ns[n] = π₂⁻¹ n; ms[m] = π₂⁻¹ m
+
+  ‖dseq‖-dseq→‖dseq‖ : ∀ (σ : ℕ → ℕ → A) (τ : ∀ n → ‖Dir‖ PO (σ n)) →
+                     (∀ (n m : ℕ) → ∃[ k ] ((Cofinal PO (σ n) (σ k)) × (Cofinal PO (σ m) (σ k)))) →
+                     ‖Dir‖ PO (λ n → σ (π₁⁻¹ n) (π₂⁻¹ n)) 
+  ‖dseq‖-dseq→‖dseq‖ σ τ cof n m =
+   let
+      ks , q , r = cof ns ms -- number of the bounding chain and the cofinality proofs
+      ks[n′] , a = q $ ns[n] -- a : ns[n] ≤ ks[n′]
+      ks[m′] , b = r $ ms[m] -- b : ms[m] ≤ ks[m′]
+   in
       -- c : ks[n′] ≤ ks[k′]   d : ks[m′] ≤ ks[k′]
       ‖‖-map (λ (ks[k′] , c , d) →
                  π ks ks[k′]
@@ -317,4 +348,3 @@ module _ {PO : PartialOrder {ℓ} {ℓ′} A} where
       (τ ks ks[n′] ks[m′])
         where
           ns = π₁⁻¹ n; ms = π₁⁻¹ m; ns[n] = π₂⁻¹ n; ms[m] = π₂⁻¹ m
-
