@@ -127,10 +127,10 @@ RightContinuity-L̅ = DurationMonad-L-bar.*-contʳ
 -- 3.
 
 -- Iteration operator † on L̅ calculated as a least fixed point
-Iteration-L̅ = DurationMonad-L-bar.L̃-Iteration
+Iteration-L̅ = DurationMonad-L-bar.L̅-Iteration
 
 -- † satisfies the iteration laws
-IterationLaws-L̅ = DurationMonad-L-bar.L̃-UniConway
+IterationLaws-L̅ = DurationMonad-L-bar.L̅-UniConway
 
 ------------------------------------------------------------------------
 -- Section 7: Formalization in HoTT/Cubical Agda
