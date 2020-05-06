@@ -173,5 +173,8 @@ L̃ = Eliminators-L-wave.Def-L̃.L̃
 -- The HIIT L̅
 L̅ = Eliminators-L-bar.Def-L̅.L̅
 
+-- Theorem 7.2.2 of the HoTT book
+HoTT-Theorem-7-2-2 = Sets.A-is-set
+
 -- Diagonalization argument for Dir-completeness
 dseq-dseq→dseq = PartialOrder.dseq-dseq→dseq
